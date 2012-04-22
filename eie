@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use feature ":5.10";
 use File::Path qw(remove_tree);
-use Digest::SHA1 qw(sha1);
+use Digest::SHA1 qw(sha1_hex);
 use File::Cat;
 use File::Touch;
 use File::Slurp;
@@ -31,13 +31,13 @@ sub eie_commit() {
 		
 		print $_."\n";
 		my $file_text = read_file($_) or die $!;
-		my $sha1 = sha1($file_text) or die $!;
+		my $sha1 = sha1_hex($file_text) or die $!;
 		my $destination = "${eie_dir}/store/".$commit_time."_".$sha1;
 		copy($_, $destination);
 		
 		touch("${eie_dir}/info/${commit_time}") or die $!;
 		open(my $info_file, ">>", "${eie_dir}/store/${commit_time}") or die $!;
-		my $info_string = "${_},${destination}";
+		my $info_string = "${_},${commit_time}.\"_\".${sha1}";
 		print $info_file $info_string."\n";
 		close $info_file;
 	}
@@ -62,6 +62,8 @@ sub eie_add() {
 sub eie_clear() {
 	unlink "${eie_dir}/addfiles" or die "Nothing to do here.";
 }
+
+
 
 given($ARGV[0]) {
 	when ("init") {
