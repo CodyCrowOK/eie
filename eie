@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-use diagnostics;
 use feature ":5.10";
 use File::Path qw(remove_tree);
 use Digest::SHA1 qw(sha1_hex);
@@ -11,7 +10,6 @@ use File::Touch;
 use File::Slurp;
 use File::Copy;
 use Cwd;
-use Scalar::Util qw(looks_like_number);
 
 my $cwd = cwd();
 our $eie_dir = "${cwd}/.eie";
@@ -39,7 +37,7 @@ sub eie_commit() {
 		
 		touch("${eie_dir}/info/${commit_time}") or die $!;
 		open(my $info_file, ">>", "${eie_dir}/store/${commit_time}") or die $!;
-		my $info_string = "${_},${commit_time}_${sha1}";
+		my $info_string = "${_},${commit_time}.\"_\".${sha1}";
 		print $info_file $info_string."\n";
 		close $info_file;
 	}
@@ -65,21 +63,7 @@ sub eie_clear() {
 	unlink "${eie_dir}/addfiles" or die "Nothing to do here.";
 }
 
-sub eie_history_file {
-	our $arg2 = $_[0];
-	my $storedir = "${eie_dir}/store";
-	opendir(my $dir, $storedir) or die $!;
-	foreach (my $storedirfile = readdir($dir)) {
-		print $storedirfile;
-		if (length($storedirfile) == 10 && looks_like_number($storedirfile)) {
-			my $commitinfo = read_file($storedirfile) or die $!;
-			if ($commitinfo =~ m/$arg2/) {
-				print $storedirfile;
-			}
-		}
-	}
-	closedir($dir);
-}
+
 
 given($ARGV[0]) {
 	when ("init") {
@@ -96,15 +80,6 @@ given($ARGV[0]) {
 	}
 	when ("killall") {
 		eie_kill_all();
-		break;
-	}
-	when ("history") {
-		if(!defined($ARGV[1])) {
-			eie_history_all();
-		}
-		else {
-			eie_history_file($ARGV[1]);
-		}
 		break;
 	}
 }
