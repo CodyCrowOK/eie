@@ -10,6 +10,7 @@ use File::Touch;
 use File::Slurp;
 use File::Copy;
 use Cwd;
+use Text::CSV;
 
 my $cwd = cwd();
 our $eie_dir = "${cwd}/.eie";
@@ -37,7 +38,7 @@ sub eie_commit() {
 		
 		touch("${eie_dir}/info/${commit_time}") or die $!;
 		open(my $info_file, ">>", "${eie_dir}/store/${commit_time}") or die $!;
-		my $info_string = "${_},${commit_time}.\"_\".${sha1}";
+		my $info_string = "${_},${commit_time}_${sha1}";
 		print $info_file $info_string."\n";
 		close $info_file;
 	}
@@ -63,7 +64,25 @@ sub eie_clear() {
 	unlink "${eie_dir}/addfiles" or die "Nothing to do here.";
 }
 
-
+sub eie_history {
+	foreach my $arg (@ARGV) {
+		if ($arg ne "history") {
+			my $file = "${eie_dir}/store/${arg}";
+				my $csv = Text::CSV->new();
+				open (CSV, "<", $file) or die $!;
+				while (<CSV>) {
+					if ($csv->parse($_)) {
+						my @columns = $csv->fields();
+						print "@columns\n";
+					} else {
+						my $err = $csv->error_input;
+						print "Failed to parse line: $err";
+					}
+				}
+				close CSV;
+			}
+		}
+}
 
 given($ARGV[0]) {
 	when ("init") {
@@ -80,6 +99,10 @@ given($ARGV[0]) {
 	}
 	when ("killall") {
 		eie_kill_all();
+		break;
+	}
+	when ("history") {
+		eie_history();
 		break;
 	}
 }
