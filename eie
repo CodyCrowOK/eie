@@ -97,7 +97,8 @@ sub eie_list {
 			my $file_text = read_file($commit) or die $!;
 			my $argv = $ARGV[1];
 			if ($file_text =~ m/$argv/) {
-				print $commit."\n";
+				print (substr $commit, -10);
+				print "\n";
 			}
 		}
 	}
