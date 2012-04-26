@@ -11,9 +11,15 @@ use File::Slurp;
 use File::Copy;
 use Cwd;
 use Text::CSV;
+use Scalar::Util qw(looks_like_number);
+use File::Glob;
 
 my $cwd = cwd();
 our $eie_dir = "${cwd}/.eie";
+
+sub is_numeric {
+  ($_[0] & ~ $_[0]) eq "0";
+}
 
 #create directories and what have you
 sub eie_init() {
@@ -84,6 +90,19 @@ sub eie_history {
 		}
 }
 
+sub eie_list {
+	my @filelist = glob "${eie_dir}/store/*";
+	foreach my $commit (@filelist) {
+		if (looks_like_number(substr $commit, -10) && length(substr $commit, -10) == 10) {
+			my $file_text = read_file($commit) or die $!;
+			my $argv = $ARGV[1];
+			if ($file_text =~ m/$argv/) {
+				print $commit."\n";
+			}
+		}
+	}
+}
+
 given($ARGV[0]) {
 	when ("init") {
 		eie_init();
@@ -101,8 +120,16 @@ given($ARGV[0]) {
 		eie_kill_all();
 		break;
 	}
+	when ("clear") {
+		eie_clear();
+		break;
+	}
 	when ("history") {
 		eie_history();
+		break;
+	}
+	when ("list") {
+		eie_list();
 		break;
 	}
 }
