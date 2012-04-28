@@ -13,6 +13,7 @@ use Cwd;
 use Text::CSV;
 use Scalar::Util qw(looks_like_number);
 use File::Glob;
+use File::Stat;
 
 my $cwd = cwd();
 our $eie_dir = "${cwd}/.eie";
@@ -104,6 +105,17 @@ sub eie_list {
 	}
 }
 
+sub eie_revert {
+	#eie revert oldfile commit
+	my $oldfile = $ARGV[1];
+	my $commit = $ARGV[2];
+	my $newtext = read_file("${eie_dir}/store/${commit}");
+	open(my $newfile, ">>", "${eie_dir}/${oldfile}") or die $!;
+	print $newfile $newtext;
+	close $newfile;
+}
+	
+
 given($ARGV[0]) {
 	when ("init") {
 		eie_init();
@@ -131,6 +143,10 @@ given($ARGV[0]) {
 	}
 	when ("list") {
 		eie_list();
+		break;
+	}
+	when ("revert") {
+		eie_revert();
 		break;
 	}
 }
