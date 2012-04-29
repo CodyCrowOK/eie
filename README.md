@@ -20,3 +20,4 @@ More to come.
 `eie list #filename#` lists all the commit-files that hold committed versions of filename.
 
 `eie revert #filename# #time#` reverts file #filename# to the state it held at commit #time#.
+It adds the file to the list of files to commit, but does not commit.

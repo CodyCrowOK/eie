@@ -19,17 +19,17 @@ my $cwd = cwd();
 our $eie_dir = "${cwd}/.eie";
 
 sub is_numeric {
-  ($_[0] & ~ $_[0]) eq "0";
+	($_[0] & ~ $_[0]) eq "0";
 }
 
 #create directories and what have you
-sub eie_init() {
+sub eie_init {
 	mkdir $eie_dir or die("Could not create eie directory.\n");
 	mkdir "${eie_dir}/store" or die("Could not create eie directory 2.\n");
 	mkdir "${eie_dir}/info" or die("Could not create eie directory 3.\n");
 	touch("${eie_dir}/addfiles") or die $!;
 }
-sub eie_commit() {
+sub eie_commit {
 	my $addfiles_contents = read_file("${eie_dir}/addfiles") or warn "Nothing to do here.";
 	chomp($addfiles_contents);
 	my @commit_files = split(/\n/, $addfiles_contents) or die $!;
@@ -51,12 +51,12 @@ sub eie_commit() {
 	}
 	eie_clear();
 }
-sub eie_kill_all() {
+sub eie_kill_all {
 	remove_tree($eie_dir) or die("Could not rm eie directory.\n");
 }
 
 #Adds @ARGV's to list of files to be processed on commit.
-sub eie_add() {
+sub eie_add {
 	foreach (@ARGV) {
 		if ($_  ne "add") {
 			open(my $addfiles_file, ">>", "${eie_dir}/addfiles") or die $!;
@@ -64,10 +64,16 @@ sub eie_add() {
 			close $addfiles_file;
 		}
 	}
-	
+	if (defined($_[0])) {
+		foreach our $argument (@_) {
+			open(my $addfiles_file, ">>", "${eie_dir}/addfiles") or die $!;
+			print $addfiles_file $argument."\n";
+			close $addfiles_file;
+		}
+	}
 }
 
-sub eie_clear() {
+sub eie_clear {
 	unlink "${eie_dir}/addfiles" or die "Nothing to do here.";
 }
 
@@ -80,7 +86,7 @@ sub eie_history {
 				while (<CSV>) {
 					if ($csv->parse($_)) {
 						my @columns = $csv->fields();
-						print "@columns\n";
+						print "$columns[1]\n";
 					} else {
 						my $err = $csv->error_input;
 						print "Failed to parse line: $err";
@@ -109,10 +115,21 @@ sub eie_revert {
 	#eie revert oldfile commit
 	my $oldfile = $ARGV[1];
 	my $commit = $ARGV[2];
-	my $newtext = read_file("${eie_dir}/store/${commit}");
-	open(my $newfile, ">>", "${eie_dir}/${oldfile}") or die $!;
-	print $newfile $newtext;
-	close $newfile;
+	my $csv = Text::CSV->new();
+	open (CSV, "<", "${eie_dir}/store/${commit}") or die $!;
+	while (<CSV>) {
+		if ($csv->parse($_)) {
+			my @columns = $csv->fields();
+			open(my $newfile, "+>", "${oldfile}") or die $!;
+			print $newfile read_file("${eie_dir}/store/$columns[1]");
+			close $newfile;
+		} else {
+			my $err = $csv->error_input;
+			print "Failed to parse line: $err";
+		}
+	}
+	close CSV;
+	eie_add($oldfile);
 }
 	
 
